@@ -13,6 +13,7 @@ class ViewController: UIViewController,UIImagePickerControllerDelegate, UINaviga
 
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var inputField: UITextField!
+    var selImage: UIImage!
     
     let imagePicker = UIImagePickerController()
     
@@ -35,53 +36,51 @@ class ViewController: UIViewController,UIImagePickerControllerDelegate, UINaviga
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         if let selImage:UIImage = info[UIImagePickerControllerOriginalImage] as? UIImage{
+            self.selImage = selImage
+            
             imageView.image = selImage
             imageView.contentMode = .scaleAspectFill
-            
-            
-            let request = VNDetectFaceRectanglesRequest {
-                    (req, err) in
-                    if let err = err{
-                        print("could not detect face: ", err)
-                    return
-                }
-                
-                req.results?.forEach({ (res) in
-                    guard let faces = res as? VNFaceObservation else {return}
-                    
-                    let faceFrameView = UIView()
-                    faceFrameView.backgroundColor = .blue
-                    faceFrameView.alpha = 0.3
-                    
-                    let x = self.imageView.frame.width * faces.boundingBox.origin.x
-                    let y = self.imageView.frame.height * faces.boundingBox.origin.y
-                    let width = self.imageView.frame.width * faces.boundingBox.width
-                    let height = self.imageView.frame.width * faces.boundingBox.height
-                    
-                    
-                    faceFrameView.frame = CGRect(x: x, y: y, width: width, height: height)
-                    
-                    self.imageView.addSubview(faceFrameView)
-                    
-                    print(faces.boundingBox)
-                })
-            }
-            
-            guard let selCGImage = selImage.cgImage else {return}
-            
-            let  handler = VNImageRequestHandler(cgImage: selCGImage, options:[:])
-            do{
-                 try handler.perform([request])
-            } catch let reqErr{
-                print("could not detect face: ", reqErr)
+        }
+        
+        dismiss(animated: true, completion: nil)
+
+        
+        let request = VNDetectFaceRectanglesRequest {
+            (req, err) in
+            if let err = err{
+                print("could not detect face: ", err)
                 return
             }
-           
-            
-        // let scaledHeight = view.frame.width / selImage.size.width * selImage.size.height
-          //  imageView.frame = CGRect(x: 10, y: 10, width: selImage.size.width, height: scaledHeight)
+            req.results?.forEach({ (res) in
+                guard let faces = res as? VNFaceObservation else {return}
+                
+                let faceFrameView = UIView()
+                faceFrameView.backgroundColor = .blue
+                faceFrameView.alpha = 0.3
+                
+                let x = self.imageView.frame.width * faces.boundingBox.origin.x
+                let y = self.imageView.frame.height * faces.boundingBox.origin.y
+                let width = self.imageView.frame.width * faces.boundingBox.width
+                let height = self.imageView.frame.width * faces.boundingBox.height
+                
+                
+                faceFrameView.frame = CGRect(x: x, y: y, width: width, height: height)
+                
+                self.imageView.addSubview(faceFrameView)
+                
+                print(faces.boundingBox)
+            })
         }
-         dismiss(animated: true, completion: nil)
+
+        guard let selCGImage = selImage.cgImage else {return}
+        let  handler = VNImageRequestHandler(cgImage: selCGImage, options:[:])
+        do{
+            try handler.perform([request])
+        } catch let reqErr{
+            print("could not detect face: ", reqErr)
+            return
+        }
+        
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
