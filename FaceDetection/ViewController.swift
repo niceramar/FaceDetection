@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Vision
 
 class ViewController: UIViewController,UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
@@ -37,9 +38,48 @@ class ViewController: UIViewController,UIImagePickerControllerDelegate, UINaviga
             imageView.image = selImage
             imageView.contentMode = .scaleAspectFill
             
-         let scaledHeight = view.frame.width / selImage.size.width * selImage.size.height
-            imageView.frame = CGRect(x: 10, y: 10, width: selImage.size.width, height: scaledHeight)
             
+            let request = VNDetectFaceRectanglesRequest {
+                    (req, err) in
+                    if let err = err{
+                        print("could not detect face: ", err)
+                    return
+                }
+                
+                req.results?.forEach({ (res) in
+                    guard let faces = res as? VNFaceObservation else {return}
+                    
+                    let faceFrameView = UIView()
+                    faceFrameView.backgroundColor = .blue
+                    faceFrameView.alpha = 0.3
+                    
+                    let x = self.imageView.frame.width * faces.boundingBox.origin.x
+                    let y = self.imageView.frame.height * faces.boundingBox.origin.y
+                    let width = self.imageView.frame.width * faces.boundingBox.width
+                    let height = self.imageView.frame.width * faces.boundingBox.height
+                    
+                    
+                    faceFrameView.frame = CGRect(x: x, y: y, width: width, height: height)
+                    
+                    self.imageView.addSubview(faceFrameView)
+                    
+                    print(faces.boundingBox)
+                })
+            }
+            
+            guard let selCGImage = selImage.cgImage else {return}
+            
+            let  handler = VNImageRequestHandler(cgImage: selCGImage, options:[:])
+            do{
+                 try handler.perform([request])
+            } catch let reqErr{
+                print("could not detect face: ", reqErr)
+                return
+            }
+           
+            
+        // let scaledHeight = view.frame.width / selImage.size.width * selImage.size.height
+          //  imageView.frame = CGRect(x: 10, y: 10, width: selImage.size.width, height: scaledHeight)
         }
          dismiss(animated: true, completion: nil)
     }
